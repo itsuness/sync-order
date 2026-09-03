@@ -1,6 +1,6 @@
 # 02 — Env and secrets validated by Zod at boot
 
-Status: ready-for-agent
+Status: done
 Blocked by: 01
 
 ## Goal
