@@ -19,7 +19,7 @@ the design decisions. Read it first. This file is about how we work.
 
 ## Stack — fixed, do not substitute
 
-- Node 22, TypeScript, `strict: true`
+- Node 24, TypeScript, `strict: true`
 - pnpm workspace: `apps/api`, `apps/web`, `packages/shared`
 - API: Fastify
 - Web: Next.js 15 App Router, Tailwind, shadcn/ui at its defaults

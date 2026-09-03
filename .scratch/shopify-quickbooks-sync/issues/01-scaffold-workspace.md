@@ -11,7 +11,7 @@ and a way to run tests. No feature logic.
 ## Scope
 
 - pnpm workspace with `apps/api`, `apps/web`, `packages/shared`.
-- Node 22, TypeScript `strict: true` everywhere. Shared `tsconfig.base.json`
+- Node 24, TypeScript `strict: true` everywhere. Shared `tsconfig.base.json`
   extended by each package.
 - `apps/api`: Fastify app skeleton with one `/health` route returning 200.
 - `apps/web`: Next.js 15 App Router, Tailwind, shadcn/ui at defaults. One
