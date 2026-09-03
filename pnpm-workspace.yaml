@@ -1,0 +1,11 @@
+packages:
+  - apps/*
+  - packages/*
+
+# esbuild (pulled in by vitest) ships a postinstall that fetches its native
+# binary. Both keys below whitelist it: onlyBuiltDependencies is the standard
+# pnpm field; allowBuilds is what this environment's install wrapper reads.
+onlyBuiltDependencies:
+  - esbuild
+allowBuilds:
+  esbuild: true
