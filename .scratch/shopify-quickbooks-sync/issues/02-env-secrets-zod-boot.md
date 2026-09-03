@@ -48,3 +48,23 @@ immediately, before any request or job is handled.
 - `CLAUDE.md` "Code standards": secrets from env only, parsed with Zod at
   boot, process exits loudly.
 - Spec "Implementation Decisions": Secrets.
+
+## Comments
+
+Implemented in `packages/shared/src/env/` (`schema.ts` + `load.ts`), consumed
+by `apps/api/src/server.ts` via `loadApiEnv()`. Chose one `fields` map sliced
+into per-process schemas (`apiEnvSchema` / `workerEnvSchema` / `webEnvSchema`);
+rationale documented in the `schema.ts` header comment.
+
+Verification (2026-09-03):
+
+- Complete env -> API boots and listens:
+  `env -i PATH="$PATH" DATABASE_URL=postgres://u:p@localhost:5432/db SHOPIFY_WEBHOOK_SECRET=fake OPERATOR_USERNAME=o OPERATOR_PASSWORD=p node --import tsx apps/api/src/server.ts`
+  -> `Server listening at http://127.0.0.1:3001`.
+- Drop one key (`OPERATOR_PASSWORD`) -> exit code 1, stderr:
+  `[api] Invalid environment:` / `  OPERATOR_PASSWORD: Invalid input: expected string, received undefined`.
+- `grep -rn "process.env" apps packages --include='*.ts'` -> matches only in
+  `packages/shared/src/env/load.ts` (default-param and one doc line).
+- `pnpm test` -> 9 passing unit tests in `env.test.ts` (valid parse, missing
+  key names the key, malformed URL, short encryption key, PORT default/coerce/
+  blank/non-numeric).
