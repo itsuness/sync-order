@@ -16,7 +16,7 @@ function stripComments(source: string): string {
 // adapter here fails loudly instead of silently breaking retry/replay.
 describe('shopify orders/create receiver — the one rule', () => {
   it('has no QuickBooks adapter or client in the receiver code path', () => {
-    for (const file of ['orders-create-route.ts', 'record-shopify-event.ts', 'shopify-hmac.ts']) {
+    for (const file of ['orders-create-route.ts', 'shopify-hmac.ts']) {
       const code = stripComments(readFileSync(resolve(here, file), 'utf8'));
       expect(code).not.toMatch(/quickbooks/i);
     }

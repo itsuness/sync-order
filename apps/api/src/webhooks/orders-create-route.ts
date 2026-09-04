@@ -1,6 +1,6 @@
+import { recordEventAndCreateJob } from '@order-sync/shared/db';
 import type { FastifyPluginAsync } from 'fastify';
 
-import { recordShopifyEvent } from './record-shopify-event.js';
 import { verifyShopifyHmac } from './shopify-hmac.js';
 import type { ShopifyWebhookOptions } from './types.js';
 
@@ -16,8 +16,9 @@ function header(value: string | string[] | undefined): string | undefined {
 
 /**
  * The Shopify `orders/create` receiver: verify the HMAC over the raw bytes,
- * store the event, return 200. It never calls QuickBooks and creates no job —
- * that is ticket 05. A duplicate delivery still returns 200.
+ * store the event, create its `sync_jobs` row (ticket 05, same transaction as
+ * the event insert), return 200. It never calls QuickBooks — that stays the
+ * worker's job. A duplicate delivery still returns 200 and creates no job.
  */
 export const shopifyOrdersCreateRoute: FastifyPluginAsync<ShopifyWebhookOptions> = async (
   app,
@@ -56,7 +57,12 @@ export const shopifyOrdersCreateRoute: FastifyPluginAsync<ShopifyWebhookOptions>
       return reply.code(400).send();
     }
 
-    const result = await recordShopifyEvent(opts.db, { eventId, topic, event });
+    const result = await recordEventAndCreateJob(opts.db, {
+      provider: 'shopify',
+      eventId,
+      topic,
+      event,
+    });
 
     if (result.ok || result.reason === 'duplicate') {
       return reply.code(200).send();

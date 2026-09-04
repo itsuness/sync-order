@@ -3,7 +3,7 @@ import { dirname, resolve } from 'node:path';
 import { Writable } from 'node:stream';
 import { fileURLToPath } from 'node:url';
 
-import { createDb, events, migrateDb } from '@order-sync/shared/db';
+import { createDb, events, migrateDb, sql, syncJobs } from '@order-sync/shared/db';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { buildApp } from '../app.js';
@@ -60,7 +60,10 @@ if (!url) {
 
     beforeEach(async () => {
       logLines.length = 0;
-      await db.delete(events);
+      // cascade, not ordered deletes: sync_jobs/dead_letter/audit_log all
+      // reference events/sync_jobs with no ON DELETE, and more of those
+      // rows will exist once later tickets land.
+      await db.execute(sql`truncate table sync_jobs, events cascade`);
     });
 
     afterAll(async () => {
@@ -81,6 +84,11 @@ if (!url) {
       expect(rows[0]?.eventId).toBe(headers['x-shopify-event-id']);
       expect(rows[0]?.topic).toBe('orders/create');
       expect(rows[0]?.payload).toEqual({ id: 9001, total_price: '42.00' });
+
+      const jobRows = await db.select().from(syncJobs);
+      expect(jobRows).toHaveLength(1);
+      expect(jobRows[0]?.eventId).toBe(rows[0]?.id);
+      expect(jobRows[0]?.status).toBe('pending');
     });
 
     it('is idempotent: the same delivery twice leaves one row and logs no error', async () => {
@@ -93,6 +101,7 @@ if (!url) {
       expect(first.statusCode).toBe(200);
       expect(second.statusCode).toBe(200);
       expect(await db.select().from(events)).toHaveLength(1);
+      expect(await db.select().from(syncJobs)).toHaveLength(1);
       expect(logLines).toHaveLength(0);
     });
 
